@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎰 Hôm Nay Ăn Gì?</title>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Quicksand', sans-serif; min-height: 100vh; overflow-x: hidden; background: #0f0c29; }
+        .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #0f0c29); background-size: 400% 400%; animation: gradientBG 15s ease infinite; z-index: -2; }
+        .floating-foods { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; }
+        .floating-food { position: absolute; font-size: 2rem; opacity: 0.3; animation: float 20s infinite linear; }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes float { 0% { transform: translateY(100vh) rotate(0deg); opacity: 0; } 10% { opacity: 0.3; } 90% { opacity: 0.3; } 100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; } }
+        .container { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .main-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(20px); border-radius: 30px; padding: 40px 35px; max-width: 650px; width: 100%; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
+        .title { text-align: center; margin-bottom: 30px; }
+        .title h1 { font-size: 2.2rem; color: white; text-shadow: 0 0 30px rgba(255,255,255,0.5); margin-bottom: 8px; }
+        .title p { color: rgba(255,255,255,0.7); font-size: 1rem; }
+        .section-label { color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-bottom: 10px; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+        .profile-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        .profile-btn { padding: 12px 8px; border: 2px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white; border-radius: 15px; cursor: pointer; font-family: inherit; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .profile-btn .emoji { font-size: 1.5rem; }
+        .profile-btn:hover { border-color: var(--accent-color, #e94560); background: rgba(233,69,96,0.2); transform: translateY(-2px); }
+        .profile-btn.active { background: var(--accent-gradient, linear-gradient(135deg, #e94560, #ff6b6b)); border-color: transparent; box-shadow: 0 5px 20px rgba(233,69,96,0.4); }
+        .category-tabs { display: flex; gap: 8px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
+        .tab { padding: 10px 20px; border: 2px solid rgba(255,255,255,0.3); background: transparent; color: white; border-radius: 50px; cursor: pointer; font-family: inherit; font-size: 0.9rem; font-weight: 600; transition: all 0.3s ease; }
+        .tab:hover { border-color: var(--accent-color, #e94560); background: rgba(233,69,96,0.2); }
+        .tab.active { background: var(--accent-gradient, linear-gradient(135deg, #e94560, #ff6b6b)); border-color: transparent; box-shadow: 0 5px 20px rgba(233,69,96,0.4); }
+        .slot-machine { background: linear-gradient(145deg, #1a1a2e, #16213e); border-radius: 20px; padding: 25px; margin-bottom: 25px; border: 3px solid var(--accent-color, #e94560); box-shadow: 0 0 30px var(--glow-color, rgba(233,69,96,0.3)), inset 0 0 30px rgba(0,0,0,0.5); position: relative; }
+        .slot-display { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+        .slot-window { width: 70px; height: 90px; background: #0f0f23; border-radius: 10px; overflow: hidden; border: 2px solid #ffd700; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
+        .slot-reel { display: flex; flex-direction: column; align-items: center; }
+        .slot-item { width: 70px; height: 90px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; }
+        .result-display { text-align: center; min-height: 100px; display: flex; flex-direction: column; justify-content: center; }
+        .food-name { font-size: 1.6rem; color: #ffd700; font-weight: 700; text-shadow: 0 0 20px rgba(255,215,0,0.5); margin-bottom: 8px; opacity: 0; transform: scale(0.5); transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .food-name.show { opacity: 1; transform: scale(1); }
+        .food-desc { color: rgba(255,255,255,0.8); font-size: 0.95rem; opacity: 0; transition: opacity 0.5s ease 0.3s; }
+        .food-desc.show { opacity: 1; }
+        .food-tags { display: flex; justify-content: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; opacity: 0; transition: opacity 0.5s ease 0.4s; }
+        .food-tags.show { opacity: 1; }
+        .food-tag { background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; color: rgba(255,255,255,0.9); }
+        .food-tag.price { background: rgba(76, 175, 80, 0.3); }
+        .food-tag.healthy { background: rgba(33, 150, 243, 0.3); }
+        .food-tag.quick { background: rgba(255, 152, 0, 0.3); }
+        .spin-btn { width: 100%; padding: 18px; font-size: 1.3rem; font-weight: 700; font-family: inherit; border: none; border-radius: 15px; cursor: pointer; background: linear-gradient(135deg, #ffd700, #ffaa00); color: #1a1a2e; box-shadow: 0 10px 30px rgba(255,215,0,0.4); transition: all 0.3s ease; position: relative; overflow: hidden; }
+        .spin-btn::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); transition: left 0.5s ease; }
+        .spin-btn:hover::before { left: 100%; }
+        .spin-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(255,215,0,0.6); }
+        .spin-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+        .budget-section { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .budget-label { color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+        .budget-slider { width: 150px; -webkit-appearance: none; height: 8px; border-radius: 5px; background: rgba(255,255,255,0.2); outline: none; }
+        .budget-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #ffd700; cursor: pointer; box-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        .budget-value { color: #ffd700; font-weight: 700; min-width: 80px; }
+
+        /* Maps Section */
+        .maps-section { margin-top: 20px; display: none; animation: slideUp 0.5s ease; }
+        .maps-section.show { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .maps-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .maps-title { color: white; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+        .location-status { font-size: 0.8rem; padding: 5px 12px; border-radius: 20px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+        .location-status.active { background: rgba(76, 175, 80, 0.3); color: #81c784; }
+        .location-status.error { background: rgba(244, 67, 54, 0.3); color: #e57373; }
+        .nearby-places { display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto; padding-right: 5px; }
+        .nearby-places::-webkit-scrollbar { width: 5px; }
+        .nearby-places::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 5px; }
+        .nearby-places::-webkit-scrollbar-thumb { background: var(--accent-color, #e94560); border-radius: 5px; }
+        .place-card { background: rgba(255,255,255,0.08); border-radius: 15px; padding: 15px; display: flex; gap: 15px; align-items: center; transition: all 0.3s ease; cursor: pointer; border: 1px solid transparent; }
+        .place-card:hover { background: rgba(255,255,255,0.12); border-color: var(--accent-color, #e94560); transform: translateX(5px); }
+        .place-icon { font-size: 2rem; min-width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 12px; }
+        .place-info { flex: 1; }
+        .place-name { color: white; font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; }
+        .place-address { color: rgba(255,255,255,0.6); font-size: 0.8rem; margin-bottom: 6px; }
+        .place-meta { display: flex; gap: 10px; flex-wrap: wrap; }
+        .place-rating { color: #ffd700; font-size: 0.8rem; display: flex; align-items: center; gap: 3px; }
+        .place-distance { color: rgba(255,255,255,0.5); font-size: 0.8rem; }
+        .place-status { font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; }
+        .place-status.open { background: rgba(76, 175, 80, 0.3); color: #81c784; }
+        .place-status.closed { background: rgba(244, 67, 54, 0.3); color: #e57373; }
+        .maps-actions { display: flex; gap: 10px; margin-top: 15px; }
+        .map-btn { flex: 1; padding: 12px; border: none; border-radius: 12px; cursor: pointer; font-family: inherit; font-size: 0.9rem; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .map-btn.primary { background: linear-gradient(135deg, #4285f4, #34a853); color: white; }
+        .map-btn.secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
+        .map-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .no-results { text-align: center; padding: 30px; color: rgba(255,255,255,0.5); }
+        .no-results .emoji { font-size: 3rem; margin-bottom: 10px; }
+        /* History */
+        .history { margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .history h3 { color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-bottom: 12px; text-align: center; }
+        .history-items { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+        .history-item { background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 20px; color: white; font-size: 0.8rem; animation: popIn 0.3s ease; }
+        @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .confetti { position: fixed; width: 10px; height: 10px; top: -10px; z-index: 1000; animation: confettiFall 3s ease-out forwards; }
+        @keyframes confettiFall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+        .lucky-badge { position: absolute; top: -12px; right: -12px; background: linear-gradient(135deg, #ff6b6b, #e94560); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; animation: pulse 2s infinite; display: none; }
+        .lucky-badge.show { display: block; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .sound-toggle { position: fixed; top: 20px; right: 20px; background: rgba(255,255,255,0.1); border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 1.3rem; backdrop-filter: blur(10px); transition: all 0.3s ease; }
+        .sound-toggle:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+        .theme-student { --accent-color: #4ecdc4; --accent-gradient: linear-gradient(135deg, #4ecdc4, #44a08d); --glow-color: rgba(78,205,196,0.3); }
+        .theme-office { --accent-color: #667eea; --accent-gradient: linear-gradient(135deg, #667eea, #764ba2); --glow-color: rgba(102,126,234,0.3); }
+        .theme-diet { --accent-color: #56ab2f; --accent-gradient: linear-gradient(135deg, #56ab2f, #a8e063); --glow-color: rgba(86,171,47,0.3); }
+        .theme-family { --accent-color: #f093fb; --accent-gradient: linear-gradient(135deg, #f093fb, #f5576c); --glow-color: rgba(240,147,251,0.3); }
+        .theme-gym { --accent-color: #ff6b6b; --accent-gradient: linear-gradient(135deg, #ff6b6b, #ee5a24); --glow-color: rgba(255,107,107,0.3); }
+        .theme-kid { --accent-color: #ffd93d; --accent-gradient: linear-gradient(135deg, #ffd93d, #ff6b6b); --glow-color: rgba(255,217,61,0.3); }
+        .theme-senior { --accent-color: #a29bfe; --accent-gradient: linear-gradient(135deg, #a29bfe, #6c5ce7); --glow-color: rgba(162,155,254,0.3); }
+        .theme-couple { --accent-color: #fd79a8; --accent-gradient: linear-gradient(135deg, #fd79a8, #e84393); --glow-color: rgba(253,121,168,0.3); }
+        @media (max-width: 500px) { .profile-grid { grid-template-columns: repeat(2, 1fr); } .main-card { padding: 25px 20px; } .title h1 { font-size: 1.8rem; } .maps-actions { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="floating-foods" id="floatingFoods"></div>
+    <button class="sound-toggle" id="soundToggle" title="Bật/Tắt âm thanh">🔊</button>
+    <div class="container">
+        <div class="main-card">
+            <div class="title">
+                <h1>🎰 Hôm Nay Ăn Gì?</h1>
+                <p>Chọn đối tượng & quay số may mắn!</p>
+            </div>
+            <p class="section-label">👤 Bạn là ai?</p>
+            <div class="profile-grid">
+                <button class="profile-btn active" data-profile="student" data-theme="theme-student"><span class="emoji">🎒</span><span>Học sinh</span></button>
+                <button class="profile-btn" data-profile="office" data-theme="theme-office"><span class="emoji">💼</span><span>Văn phòng</span></button>
+                <button class="profile-btn" data-profile="diet" data-theme="theme-diet"><span class="emoji">🥗</span><span>Ăn kiêng</span></button>
+                <button class="profile-btn" data-profile="family" data-theme="theme-family"><span class="emoji">👨‍👩‍👧</span><span>Gia đình</span></button>
+                <button class="profile-btn" data-profile="gym" data-theme="theme-gym"><span class="emoji">💪</span><span>Gym</span></button>
+                <button class="profile-btn" data-profile="kid" data-theme="theme-kid"><span class="emoji">👶</span><span>Trẻ em</span></button>
+                <button class="profile-btn" data-profile="senior" data-theme="theme-senior"><span class="emoji">👴</span><span>Người lớn tuổi</span></button>
+                <button class="profile-btn" data-profile="couple" data-theme="theme-couple"><span class="emoji">💑</span><span>Cặp đôi</span></button>
+            </div>
+            <div class="budget-section">
+                <span class="budget-label">💰 Ngân sách:</span>
+                <input type="range" class="budget-slider" id="budgetSlider" min="1" max="4" value="2">
+                <span class="budget-value" id="budgetValue">Vừa phải</span>
+            </div>
+            <div class="category-tabs">
+                <button class="tab active" data-category="snack">🍿 Ăn Vặt</button>
+                <button class="tab" data-category="dinner">🍲 Ăn Chiều</button>
+                <button class="tab" data-category="all">🎲 Tất Cả</button>
+            </div>
+            <div class="slot-machine">
+                <div class="lucky-badge" id="luckyBadge">🍀 JACKPOT!</div>
+                <div class="slot-display">
+                    <div class="slot-window"><div class="slot-reel" id="reel1"></div></div>
+                    <div class="slot-window"><div class="slot-reel" id="reel2"></div></div>
+                    <div class="slot-window"><div class="slot-reel" id="reel3"></div></div>
+                </div>
+                <div class="result-display">
+                    <div class="food-name" id="foodName">Chọn đối tượng & bấm QUAY!</div>
+                    <div class="food-desc" id="foodDesc"></div>
+                    <div class="food-tags" id="foodTags"></div>
+                </div>
+            </div>
+            <button class="spin-btn" id="spinBtn">🎰 QUAY NGAY!</button>
+
+            <!-- Maps Section -->
+            <div class="maps-section" id="mapsSection">
+                <div class="maps-header">
+                    <div class="maps-title">📍 Quán gần bạn</div>
+                    <div class="location-status" id="locationStatus">Chưa bật vị trí</div>
+                </div>
+                <div class="nearby-places" id="nearbyPlaces">
+                    <div class="no-results">
+                        <div class="emoji">📍</div>
+                        <p>Bấm "Tìm quán gần đây" để xem gợi ý</p>
+                    </div>
+                </div>
+                <div class="maps-actions">
+                    <button class="map-btn primary" id="findNearbyBtn">📍 Tìm quán gần đây</button>
+                    <button class="map-btn secondary" id="openMapsBtn">🗺️ Mở Google Maps</button>
+                </div>
+            </div>
+            <div class="history">
+                <h3>📜 Lịch sử gợi ý</h3>
+                <div class="history-items" id="historyItems"></div>
+            </div>
+        </div>
+    </div>
+<script>
+const foods = {
+    student: {
+        snack: [
+            { name: "Bánh tráng trộn", desc: "Rẻ mà ngon, ăn hoài không chán", emoji: "🥗", price: 1, tags: ["Giá rẻ", "Nhanh"], searchTerm: "bánh tráng trộn" },
+            { name: "Trà sữa trân châu", desc: "Học bài mệt thì uống cho tỉnh", emoji: "🧋", price: 2, tags: ["Giải khát", "Ngọt"], searchTerm: "trà sữa" },
+            { name: "Bánh mì que", desc: "Giòn rụm, ăn vội giữa giờ", emoji: "🥖", price: 1, tags: ["Giá rẻ", "Nhanh"], searchTerm: "bánh mì" },
+            { name: "Xoài lắc", desc: "Chua chua cay cay đã miệng", emoji: "🥭", price: 1, tags: ["Giá rẻ", "Healthy"], searchTerm: "xoài lắc" },
+            { name: "Bánh tráng nướng", desc: "Pizza Việt Nam giá sinh viên", emoji: "🍕", price: 1, tags: ["Giá rẻ", "No lâu"], searchTerm: "bánh tráng nướng" },
+            { name: "Nem chua rán", desc: "Giòn tan, chấm tương ớt", emoji: "🍤", price: 1, tags: ["Giá rẻ", "Giòn"], searchTerm: "nem chua rán" },
+            { name: "Khoai tây chiên", desc: "Ăn vặt kinh điển", emoji: "🍟", price: 1, tags: ["Giá rẻ", "Giòn"], searchTerm: "khoai tây chiên" },
+            { name: "Bắp xào", desc: "Ngọt bùi thơm bơ", emoji: "🌽", price: 1, tags: ["Giá rẻ", "Healthy"], searchTerm: "bắp xào" }
+        ],
+        dinner: [
+            { name: "Cơm bình dân", desc: "No bụng, rẻ tiền, đủ chất", emoji: "🍚", price: 1, tags: ["Giá rẻ", "No lâu"], searchTerm: "cơm bình dân" },
+            { name: "Mì tôm trứng", desc: "Món cứu đói cuối tháng", emoji: "🍜", price: 1, tags: ["Siêu rẻ", "Nhanh"], searchTerm: "quán mì" },
+            { name: "Bánh mì thịt", desc: "Đầy đủ nhân, giá hạt dẻ", emoji: "🥪", price: 1, tags: ["Giá rẻ", "No lâu"], searchTerm: "bánh mì" },
+            { name: "Bún bò", desc: "Đậm đà, ăn là ghiền", emoji: "🍲", price: 2, tags: ["Ngon", "No lâu"], searchTerm: "bún bò" },
+            { name: "Cơm gà xối mỡ", desc: "Giòn rụm, cơm thơm", emoji: "🍗", price: 2, tags: ["Ngon", "No lâu"], searchTerm: "cơm gà" },
+            { name: "Phở", desc: "Món quốc dân không bao giờ chán", emoji: "🍜", price: 2, tags: ["Ngon", "Bổ dưỡng"], searchTerm: "phở" }
+        ]
+    },
+    office: {
+        snack: [
+            { name: "Cà phê sữa đá", desc: "Tỉnh táo làm việc hiệu quả", emoji: "☕", price: 2, tags: ["Tỉnh táo", "Nhanh"], searchTerm: "cà phê" },
+            { name: "Trà sữa", desc: "Giải stress giữa giờ", emoji: "🧋", price: 2, tags: ["Thư giãn", "Ngọt"], searchTerm: "trà sữa" },
+            { name: "Bánh ngọt", desc: "Ăn nhẹ buổi chiều", emoji: "🧁", price: 2, tags: ["Nhẹ nhàng", "Ngọt"], searchTerm: "tiệm bánh" },
+            { name: "Sữa chua", desc: "Healthy, tốt cho tiêu hóa", emoji: "🥛", price: 2, tags: ["Healthy", "Nhẹ"], searchTerm: "sữa chua" },
+            { name: "Trái cây cắt", desc: "Vitamin tự nhiên", emoji: "🍇", price: 2, tags: ["Healthy", "Tươi"], searchTerm: "trái cây" },
+            { name: "Sandwich", desc: "Ăn nhanh tại bàn làm việc", emoji: "🥪", price: 2, tags: ["Tiện lợi", "Nhanh"], searchTerm: "sandwich" }
+        ],
+        dinner: [
+            { name: "Cơm văn phòng", desc: "Đặt ship tiện lợi", emoji: "🍱", price: 2, tags: ["Tiện lợi", "Đủ chất"], searchTerm: "cơm văn phòng" },
+            { name: "Salad gà", desc: "Nhẹ nhàng, không buồn ngủ", emoji: "🥗", price: 3, tags: ["Healthy", "Nhẹ"], searchTerm: "salad" },
+            { name: "Bún chả", desc: "Đổi vị cuối tuần", emoji: "🥢", price: 2, tags: ["Ngon", "Truyền thống"], searchTerm: "bún chả" },
+            { name: "Phở", desc: "Ấm bụng ngày mưa", emoji: "🍜", price: 2, tags: ["Ngon", "Ấm bụng"], searchTerm: "phở" },
+            { name: "Cơm tấm", desc: "No lâu, làm việc hiệu quả", emoji: "🍚", price: 2, tags: ["No lâu", "Ngon"], searchTerm: "cơm tấm" },
+            { name: "Sushi", desc: "Sang chảnh chút cuối tuần", emoji: "🍣", price: 4, tags: ["Cao cấp", "Healthy"], searchTerm: "sushi" }
+        ]
+    },
+    diet: {
+        snack: [
+            { name: "Sữa chua Hy Lạp", desc: "Ít calo, giàu protein", emoji: "🥛", price: 2, tags: ["Low-cal", "Protein"], searchTerm: "sữa chua" },
+            { name: "Trái cây tươi", desc: "Vitamin tự nhiên, ít đường", emoji: "🍎", price: 2, tags: ["Healthy", "Vitamin"], searchTerm: "trái cây" },
+            { name: "Hạt mix", desc: "Chất béo tốt, no lâu", emoji: "🥜", price: 3, tags: ["Healthy", "Protein"], searchTerm: "hạt dinh dưỡng" },
+            { name: "Sinh tố rau củ", desc: "Detox, thanh lọc cơ thể", emoji: "🥤", price: 2, tags: ["Detox", "Vitamin"], searchTerm: "sinh tố" },
+            { name: "Cà rốt baby", desc: "Ăn vặt không lo tăng cân", emoji: "🥕", price: 1, tags: ["Low-cal", "Giòn"], searchTerm: "rau củ" },
+            { name: "Trà xanh", desc: "Đốt mỡ, tăng trao đổi chất", emoji: "🍵", price: 1, tags: ["Detox", "0 cal"], searchTerm: "trà" }
+        ],
+        dinner: [
+            { name: "Salad ức gà", desc: "Protein cao, carb thấp", emoji: "🥗", price: 3, tags: ["High protein", "Low carb"], searchTerm: "salad" },
+            { name: "Cá hấp rau củ", desc: "Nhẹ nhàng, đủ chất", emoji: "🐟", price: 3, tags: ["Healthy", "Omega-3"], searchTerm: "cá hấp" },
+            { name: "Súp rau củ", desc: "Ít calo, nhiều chất xơ", emoji: "🥣", price: 2, tags: ["Low-cal", "Chất xơ"], searchTerm: "súp" },
+            { name: "Gỏi cuốn", desc: "Tươi mát, ít dầu mỡ", emoji: "🌯", price: 2, tags: ["Fresh", "Low-cal"], searchTerm: "gỏi cuốn" },
+            { name: "Cơm gạo lứt", desc: "Carb phức hợp, no lâu", emoji: "🍚", price: 2, tags: ["Healthy", "Chất xơ"], searchTerm: "cơm gạo lứt" },
+            { name: "Thịt bò áp chảo", desc: "Protein chất lượng cao", emoji: "🥩", price: 4, tags: ["High protein", "Iron"], searchTerm: "bò bít tết" }
+        ]
+    },
+    family: {
+        snack: [
+            { name: "Chè thái", desc: "Cả nhà cùng thưởng thức", emoji: "🍨", price: 2, tags: ["Gia đình", "Mát lạnh"], searchTerm: "chè" },
+            { name: "Bánh flan", desc: "Ai cũng thích", emoji: "🍮", price: 2, tags: ["Ngọt", "Mềm mịn"], searchTerm: "bánh flan" },
+            { name: "Trái cây dĩa", desc: "Healthy cho cả nhà", emoji: "🍇", price: 2, tags: ["Healthy", "Tươi"], searchTerm: "trái cây" },
+            { name: "Kem", desc: "Tráng miệng hoàn hảo", emoji: "🍦", price: 2, tags: ["Ngọt", "Mát"], searchTerm: "kem" },
+            { name: "Bánh bông lan", desc: "Ăn nhẹ buổi chiều", emoji: "🍰", price: 2, tags: ["Nhẹ nhàng", "Ngọt"], searchTerm: "tiệm bánh" },
+            { name: "Sữa đậu nành", desc: "Bổ dưỡng cho mọi lứa tuổi", emoji: "🥛", price: 1, tags: ["Healthy", "Bổ dưỡng"], searchTerm: "sữa đậu nành" }
+        ],
+        dinner: [
+            { name: "Lẩu", desc: "Quây quần bên nhau", emoji: "🫕", price: 4, tags: ["Gia đình", "Ấm cúng"], searchTerm: "lẩu" },
+            { name: "Cơm nhà", desc: "Không gì bằng cơm mẹ nấu", emoji: "🍚", price: 2, tags: ["Gia đình", "Ấm cúng"], searchTerm: "quán cơm" },
+            { name: "BBQ", desc: "Nướng vui vẻ cuối tuần", emoji: "🍖", price: 4, tags: ["Vui vẻ", "Đa dạng"], searchTerm: "nướng BBQ" },
+            { name: "Pizza", desc: "Ai cũng thích, dễ chia", emoji: "🍕", price: 3, tags: ["Gia đình", "Đa dạng"], searchTerm: "pizza" },
+            { name: "Gà rán", desc: "Trẻ con mê tít", emoji: "🍗", price: 3, tags: ["Ngon", "Giòn"], searchTerm: "gà rán" },
+            { name: "Phở", desc: "Món Việt cả nhà đều ưa", emoji: "🍜", price: 2, tags: ["Truyền thống", "Ngon"], searchTerm: "phở" }
+        ]
+    },
+
+    gym: {
+        snack: [
+            { name: "Protein shake", desc: "Phục hồi cơ sau tập", emoji: "🥤", price: 3, tags: ["Protein", "Recovery"], searchTerm: "protein" },
+            { name: "Chuối", desc: "Năng lượng nhanh, kali cao", emoji: "🍌", price: 1, tags: ["Energy", "Kali"], searchTerm: "trái cây" },
+            { name: "Trứng luộc", desc: "Protein sạch, tiện lợi", emoji: "🥚", price: 1, tags: ["Protein", "Clean"], searchTerm: "đồ ăn healthy" },
+            { name: "Yến mạch", desc: "Carb phức hợp, no lâu", emoji: "🥣", price: 2, tags: ["Carb", "Chất xơ"], searchTerm: "yến mạch" },
+            { name: "Hạnh nhân", desc: "Chất béo tốt, protein", emoji: "🥜", price: 3, tags: ["Healthy fat", "Protein"], searchTerm: "hạt dinh dưỡng" },
+            { name: "Greek yogurt", desc: "Protein cao, ít đường", emoji: "🥛", price: 2, tags: ["Protein", "Low sugar"], searchTerm: "sữa chua" }
+        ],
+        dinner: [
+            { name: "Ức gà + khoai lang", desc: "Combo tăng cơ kinh điển", emoji: "🍗", price: 3, tags: ["High protein", "Clean"], searchTerm: "ức gà" },
+            { name: "Cá hồi nướng", desc: "Omega-3, protein chất lượng", emoji: "🐟", price: 4, tags: ["Omega-3", "Protein"], searchTerm: "cá hồi" },
+            { name: "Bò bít tết", desc: "Protein + sắt cho gymer", emoji: "🥩", price: 4, tags: ["Protein", "Iron"], searchTerm: "bò bít tết" },
+            { name: "Salad protein", desc: "Đủ chất, ít carb", emoji: "🥗", price: 3, tags: ["High protein", "Low carb"], searchTerm: "salad" },
+            { name: "Cơm gạo lứt gà", desc: "Meal prep hoàn hảo", emoji: "🍱", price: 2, tags: ["Balanced", "Clean"], searchTerm: "cơm gạo lứt" },
+            { name: "Trứng chiên rau củ", desc: "Nhanh gọn, đủ chất", emoji: "🍳", price: 2, tags: ["Protein", "Quick"], searchTerm: "quán ăn healthy" }
+        ]
+    },
+    kid: {
+        snack: [
+            { name: "Kem ốc quế", desc: "Phần thưởng cho bé ngoan", emoji: "🍦", price: 2, tags: ["Ngọt", "Yêu thích"], searchTerm: "kem" },
+            { name: "Bánh quy", desc: "Ăn vặt an toàn", emoji: "🍪", price: 1, tags: ["Ngọt", "Giòn"], searchTerm: "tiệm bánh" },
+            { name: "Sữa tươi", desc: "Canxi cho bé cao lớn", emoji: "🥛", price: 1, tags: ["Canxi", "Bổ dưỡng"], searchTerm: "sữa" },
+            { name: "Trái cây cắt", desc: "Vitamin tự nhiên", emoji: "🍎", price: 2, tags: ["Vitamin", "Healthy"], searchTerm: "trái cây" },
+            { name: "Pudding", desc: "Mềm mịn, bé thích", emoji: "🍮", price: 2, tags: ["Mềm", "Ngọt"], searchTerm: "pudding" },
+            { name: "Khoai tây chiên", desc: "Món bé nào cũng mê", emoji: "🍟", price: 2, tags: ["Giòn", "Yêu thích"], searchTerm: "khoai tây chiên" }
+        ],
+        dinner: [
+            { name: "Mì Ý", desc: "Sợi mì bé dễ ăn", emoji: "🍝", price: 2, tags: ["Dễ ăn", "Ngon"], searchTerm: "mì ý" },
+            { name: "Cơm chiên trứng", desc: "Đơn giản, bé thích", emoji: "🍳", price: 2, tags: ["Dễ ăn", "Ngon"], searchTerm: "cơm chiên" },
+            { name: "Gà viên", desc: "Hình dáng vui nhộn", emoji: "🍗", price: 2, tags: ["Vui", "Protein"], searchTerm: "gà rán" },
+            { name: "Súp gà", desc: "Ấm bụng, dễ tiêu", emoji: "🥣", price: 2, tags: ["Ấm", "Bổ dưỡng"], searchTerm: "súp" },
+            { name: "Pizza mini", desc: "Size vừa tay bé", emoji: "🍕", price: 2, tags: ["Vui", "Yêu thích"], searchTerm: "pizza" },
+            { name: "Cháo thịt bằm", desc: "Mềm, dễ nuốt", emoji: "🥘", price: 1, tags: ["Mềm", "Bổ dưỡng"], searchTerm: "cháo" }
+        ]
+    },
+    senior: {
+        snack: [
+            { name: "Chè đậu xanh", desc: "Mát gan, thanh nhiệt", emoji: "🍵", price: 1, tags: ["Thanh mát", "Dễ tiêu"], searchTerm: "chè" },
+            { name: "Chuối chín", desc: "Mềm, dễ ăn, nhiều kali", emoji: "🍌", price: 1, tags: ["Mềm", "Kali"], searchTerm: "trái cây" },
+            { name: "Sữa đậu nành", desc: "Tốt cho xương khớp", emoji: "🥛", price: 1, tags: ["Canxi", "Protein"], searchTerm: "sữa đậu nành" },
+            { name: "Bánh đậu xanh", desc: "Truyền thống, dễ ăn", emoji: "🍡", price: 1, tags: ["Mềm", "Truyền thống"], searchTerm: "bánh đậu xanh" },
+            { name: "Trà thảo mộc", desc: "Tốt cho sức khỏe", emoji: "🍵", price: 1, tags: ["Healthy", "Thư giãn"], searchTerm: "trà" },
+            { name: "Đu đủ chín", desc: "Tốt cho tiêu hóa", emoji: "🍈", price: 1, tags: ["Mềm", "Tiêu hóa"], searchTerm: "trái cây" }
+        ],
+        dinner: [
+            { name: "Cháo", desc: "Dễ tiêu, ấm bụng", emoji: "🥣", price: 1, tags: ["Mềm", "Dễ tiêu"], searchTerm: "cháo" },
+            { name: "Canh rau củ", desc: "Nhiều vitamin, ít dầu mỡ", emoji: "🥗", price: 1, tags: ["Healthy", "Nhẹ"], searchTerm: "quán chay" },
+            { name: "Cá hấp", desc: "Mềm, nhiều omega-3", emoji: "🐟", price: 2, tags: ["Mềm", "Omega-3"], searchTerm: "cá hấp" },
+            { name: "Phở", desc: "Nước dùng thanh, dễ ăn", emoji: "🍜", price: 2, tags: ["Truyền thống", "Ấm"], searchTerm: "phở" },
+            { name: "Cơm mềm + canh", desc: "Bữa cơm đơn giản", emoji: "🍚", price: 1, tags: ["Truyền thống", "Nhẹ"], searchTerm: "quán cơm" },
+            { name: "Súp gà", desc: "Bổ dưỡng, dễ hấp thu", emoji: "🥘", price: 2, tags: ["Bổ dưỡng", "Mềm"], searchTerm: "súp" }
+        ]
+    },
+    couple: {
+        snack: [
+            { name: "Trà sữa đôi", desc: "Ngọt ngào như tình yêu", emoji: "🧋", price: 2, tags: ["Lãng mạn", "Ngọt"], searchTerm: "trà sữa" },
+            { name: "Kem 2 vị", desc: "Chia sẻ vị ngọt", emoji: "🍦", price: 2, tags: ["Lãng mạn", "Ngọt"], searchTerm: "kem" },
+            { name: "Bánh crepe", desc: "Date cafe lãng mạn", emoji: "🥞", price: 3, tags: ["Sang", "Lãng mạn"], searchTerm: "crepe" },
+            { name: "Trái cây dĩa", desc: "Healthy date", emoji: "🍓", price: 2, tags: ["Healthy", "Fresh"], searchTerm: "trái cây" },
+            { name: "Chocolate", desc: "Ngọt ngào bên nhau", emoji: "🍫", price: 2, tags: ["Lãng mạn", "Ngọt"], searchTerm: "chocolate" },
+            { name: "Waffle", desc: "Ăn vặt cuối tuần", emoji: "🧇", price: 2, tags: ["Ngọt", "Thư giãn"], searchTerm: "waffle" }
+        ],
+        dinner: [
+            { name: "Lẩu đôi", desc: "Ấm áp bên nhau", emoji: "🫕", price: 3, tags: ["Lãng mạn", "Ấm cúng"], searchTerm: "lẩu" },
+            { name: "Steak", desc: "Date night hoàn hảo", emoji: "🥩", price: 4, tags: ["Sang trọng", "Đặc biệt"], searchTerm: "steak" },
+            { name: "Sushi", desc: "Tinh tế, lãng mạn", emoji: "🍣", price: 4, tags: ["Sang", "Healthy"], searchTerm: "sushi" },
+            { name: "Pizza", desc: "Chill tại nhà", emoji: "🍕", price: 3, tags: ["Thoải mái", "Vui"], searchTerm: "pizza" },
+            { name: "BBQ Hàn", desc: "Nướng vui vẻ", emoji: "🥓", price: 3, tags: ["Vui", "Đa dạng"], searchTerm: "nướng hàn quốc" },
+            { name: "Pasta", desc: "Lãng mạn kiểu Ý", emoji: "🍝", price: 3, tags: ["Lãng mạn", "Ngon"], searchTerm: "pasta" }
+        ]
+    }
+};
+
+const budgetLabels = ['Siêu rẻ', 'Vừa phải', 'Thoải mái', 'Sang chảnh'];
+let currentProfile = 'student';
+let currentCategory = 'snack';
+let currentBudget = 2;
+let isSpinning = false;
+let soundEnabled = true;
+let history = [];
+let userLocation = null;
+let currentFood = null;
+const allEmojis = ['🍜','🍲','🍚','🥪','🍝','🥣','🥟','🥘','🌯','🍗','🍟','🍕','🧋','🍦','🍨','🥗','🍤','🌽','🥭','🥖','🍮','🍢','🐙','🦀','🐔','🥞','🫘','🫕','☕','🥛','🍎','🥜','🍵','🥕','🐟','🥩','🍖','🍣','🥚','🍌','🥓','🍫','🧇','🍪','🍈','🍡','🍳','🧁','🍇','🍰','🍱'];
+
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+
+function playSound(type) {
+    if (!soundEnabled) return;
+    if (!audioCtx) audioCtx = new AudioContext();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    if (type === 'spin') {
+        oscillator.frequency.value = 200 + Math.random() * 400;
+        gainNode.gain.value = 0.1;
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.05);
+    } else if (type === 'win') {
+        oscillator.frequency.value = 523;
+        gainNode.gain.value = 0.2;
+        oscillator.start();
+        setTimeout(() => oscillator.frequency.value = 659, 100);
+        setTimeout(() => oscillator.frequency.value = 784, 200);
+        oscillator.stop(audioCtx.currentTime + 0.4);
+    } else if (type === 'jackpot') {
+        [523, 659, 784, 1047].forEach((freq, i) => {
+            setTimeout(() => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.value = freq;
+                gain.gain.value = 0.15;
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            }, i * 150);
+        });
+    }
+}
+
+function createFloatingFoods() {
+    const container = document.getElementById('floatingFoods');
+    for (let i = 0; i < 15; i++) {
+        const food = document.createElement('div');
+        food.className = 'floating-food';
+        food.textContent = allEmojis[Math.floor(Math.random() * allEmojis.length)];
+        food.style.left = Math.random() * 100 + '%';
+        food.style.animationDelay = Math.random() * 20 + 's';
+        food.style.animationDuration = (15 + Math.random() * 10) + 's';
+        container.appendChild(food);
+    }
+}
+
+function createConfetti() {
+    const colors = ['#ffd700', '#e94560', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4'];
+    for (let i = 0; i < 50; i++) {
+        setTimeout(() => {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+            confetti.style.width = (5 + Math.random() * 10) + 'px';
+            confetti.style.height = confetti.style.width;
+            document.body.appendChild(confetti);
+            setTimeout(() => confetti.remove(), 3000);
+        }, i * 30);
+    }
+}
+
+function initReels() {
+    [1, 2, 3].forEach(i => {
+        const reel = document.getElementById('reel' + i);
+        reel.innerHTML = '';
+        const item = document.createElement('div');
+        item.className = 'slot-item';
+        item.textContent = allEmojis[Math.floor(Math.random() * allEmojis.length)];
+        reel.appendChild(item);
+    });
+}
+
+function updateTheme(theme) {
+    document.body.className = theme;
+}
+
+// Location & Maps Functions
+function getUserLocation() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error('Trình duyệt không hỗ trợ định vị'));
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            position => {
+                userLocation = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                resolve(userLocation);
+            },
+            error => {
+                reject(error);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    });
+}
+
+function updateLocationStatus(status, type = 'default') {
+    const el = document.getElementById('locationStatus');
+    el.textContent = status;
+    el.className = 'location-status';
+    if (type === 'active') el.classList.add('active');
+    if (type === 'error') el.classList.add('error');
+}
+
+function generateMockPlaces(foodName, searchTerm) {
+    const places = [];
+    const prefixes = ['Quán', 'Tiệm', 'Nhà hàng', 'Quầy', 'Xe'];
+    const suffixes = ['Ngon', 'Sạch', 'Gia truyền', 'Cô Ba', 'Chú Tư', 'Anh Hai', 'Chị Năm', '68', '99', 'Hương Vị'];
+    const streets = ['Nguyễn Huệ', 'Lê Lợi', 'Trần Hưng Đạo', 'Hai Bà Trưng', 'Pasteur', 'Võ Văn Tần', 'Điện Biên Phủ', 'Cách Mạng Tháng 8'];
+    
+    for (let i = 0; i < 5; i++) {
+        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+        const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+        const street = streets[Math.floor(Math.random() * streets.length)];
+        const number = Math.floor(Math.random() * 200) + 1;
+        const rating = (3.5 + Math.random() * 1.5).toFixed(1);
+        const distance = (0.1 + Math.random() * 2).toFixed(1);
+        const isOpen = Math.random() > 0.2;
+        
+        places.push({
+            name: `${prefix} ${foodName} ${suffix}`,
+            address: `${number} ${street}`,
+            rating: parseFloat(rating),
+            distance: parseFloat(distance),
+            isOpen: isOpen,
+            searchTerm: searchTerm
+        });
+    }
+    
+    return places.sort((a, b) => a.distance - b.distance);
+}
+
+function renderPlaces(places) {
+    const container = document.getElementById('nearbyPlaces');
+    
+    if (places.length === 0) {
+        container.innerHTML = `
+            <div class="no-results">
+                <div class="emoji">😢</div>
+                <p>Không tìm thấy quán nào gần đây</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = places.map(place => `
+        <div class="place-card" onclick="openPlaceInMaps('${place.searchTerm}', '${place.address}')">
+            <div class="place-icon">${currentFood ? currentFood.emoji : '🍽️'}</div>
+            <div class="place-info">
+                <div class="place-name">${place.name}</div>
+                <div class="place-address">📍 ${place.address}</div>
+                <div class="place-meta">
+                    <span class="place-rating">⭐ ${place.rating}</span>
+                    <span class="place-distance">📏 ${place.distance} km</span>
+                    <span class="place-status ${place.isOpen ? 'open' : 'closed'}">${place.isOpen ? '🟢 Đang mở' : '🔴 Đã đóng'}</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function findNearbyPlaces() {
+    if (!currentFood) {
+        alert('Vui lòng quay số để chọn món ăn trước!');
+        return;
+    }
+    
+    const btn = document.getElementById('findNearbyBtn');
+    btn.innerHTML = '<span class="loading-spinner"></span> Đang tìm...';
+    btn.disabled = true;
+    
+    try {
+        await getUserLocation();
+        updateLocationStatus(`📍 ${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)}`, 'active');
+        
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const places = generateMockPlaces(currentFood.name, currentFood.searchTerm);
+        renderPlaces(places);
+        
+    } catch (error) {
+        updateLocationStatus('❌ Không thể lấy vị trí', 'error');
+        // Still show mock results
+        const places = generateMockPlaces(currentFood.name, currentFood.searchTerm);
+        renderPlaces(places);
+    }
+    
+    btn.innerHTML = '📍 Tìm quán gần đây';
+    btn.disabled = false;
+}
+
+function openPlaceInMaps(searchTerm, address) {
+    let url;
+    if (userLocation) {
+        url = `https://www.google.com/maps/search/${encodeURIComponent(searchTerm)}/@${userLocation.lat},${userLocation.lng},15z`;
+    } else {
+        url = `https://www.google.com/maps/search/${encodeURIComponent(searchTerm + ' ' + address)}`;
+    }
+    window.open(url, '_blank');
+}
+
+function openGoogleMaps() {
+    if (!currentFood) {
+        alert('Vui lòng quay số để chọn món ăn trước!');
+        return;
+    }
+    
+    let url;
+    if (userLocation) {
+        url = `https://www.google.com/maps/search/${encodeURIComponent(currentFood.searchTerm)}/@${userLocation.lat},${userLocation.lng},15z`;
+    } else {
+        url = `https://www.google.com/maps/search/${encodeURIComponent(currentFood.searchTerm + ' gần đây')}`;
+    }
+    window.open(url, '_blank');
+}
+
+async function spin() {
+    if (isSpinning) return;
+    isSpinning = true;
+    
+    const btn = document.getElementById('spinBtn');
+    btn.disabled = true;
+    btn.textContent = '🎰 ĐANG QUAY...';
+    
+    document.getElementById('foodName').classList.remove('show');
+    document.getElementById('foodDesc').classList.remove('show');
+    document.getElementById('foodTags').classList.remove('show');
+    document.getElementById('luckyBadge').classList.remove('show');
+    document.getElementById('mapsSection').classList.remove('show');
+
+    let foodList = [];
+    const profileFoods = foods[currentProfile];
+    
+    if (currentCategory === 'all') {
+        foodList = [...profileFoods.snack, ...profileFoods.dinner];
+    } else {
+        foodList = profileFoods[currentCategory];
+    }
+    
+    foodList = foodList.filter(f => f.price <= currentBudget);
+    if (foodList.length === 0) {
+        foodList = currentCategory === 'all' 
+            ? [...profileFoods.snack, ...profileFoods.dinner]
+            : profileFoods[currentCategory];
+    }
+    
+    const selectedFood = foodList[Math.floor(Math.random() * foodList.length)];
+    currentFood = selectedFood;
+    const reels = [1, 2, 3].map(i => document.getElementById('reel' + i));
+    
+    reels.forEach((reel, index) => {
+        let spins = 0;
+        const maxSpins = 20 + index * 10;
+        const spinDuration = (2000 + index * 500) / maxSpins;
+        
+        const interval = setInterval(() => {
+            reel.innerHTML = '';
+            const item = document.createElement('div');
+            item.className = 'slot-item';
+            item.textContent = allEmojis[Math.floor(Math.random() * allEmojis.length)];
+            reel.appendChild(item);
+            playSound('spin');
+            spins++;
+            
+            if (spins >= maxSpins) {
+                clearInterval(interval);
+                reel.innerHTML = '';
+                const finalItem = document.createElement('div');
+                finalItem.className = 'slot-item';
+                finalItem.textContent = selectedFood.emoji;
+                reel.appendChild(finalItem);
+            }
+        }, spinDuration);
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 3200));
+
+    const isJackpot = Math.random() < 0.1;
+    if (isJackpot) {
+        document.getElementById('luckyBadge').classList.add('show');
+        playSound('jackpot');
+        createConfetti();
+    } else {
+        playSound('win');
+    }
+
+    document.getElementById('foodName').textContent = selectedFood.name;
+    document.getElementById('foodName').classList.add('show');
+    
+    document.getElementById('foodDesc').textContent = selectedFood.desc;
+    document.getElementById('foodDesc').classList.add('show');
+
+    const tagsContainer = document.getElementById('foodTags');
+    tagsContainer.innerHTML = '';
+    selectedFood.tags.forEach(tag => {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'food-tag';
+        if (tag.includes('rẻ') || tag.includes('Giá')) tagEl.classList.add('price');
+        if (tag.includes('Healthy') || tag.includes('Protein') || tag.includes('Low')) tagEl.classList.add('healthy');
+        if (tag.includes('Nhanh') || tag.includes('Quick')) tagEl.classList.add('quick');
+        tagEl.textContent = tag;
+        tagsContainer.appendChild(tagEl);
+    });
+    tagsContainer.classList.add('show');
+
+    // Show maps section
+    setTimeout(() => {
+        document.getElementById('mapsSection').classList.add('show');
+        document.getElementById('nearbyPlaces').innerHTML = `
+            <div class="no-results">
+                <div class="emoji">📍</div>
+                <p>Bấm "Tìm quán gần đây" để xem gợi ý</p>
+            </div>
+        `;
+    }, 500);
+
+    addToHistory(selectedFood);
+
+    btn.disabled = false;
+    btn.textContent = '🎰 QUAY LẠI!';
+    isSpinning = false;
+}
+
+function addToHistory(food) {
+    history.unshift(food);
+    if (history.length > 5) history.pop();
+    
+    const container = document.getElementById('historyItems');
+    container.innerHTML = '';
+    history.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'history-item';
+        el.textContent = `${item.emoji} ${item.name}`;
+        container.appendChild(el);
+    });
+}
+
+// Event listeners
+document.querySelectorAll('.profile-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.profile-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentProfile = btn.dataset.profile;
+        updateTheme(btn.dataset.theme);
+    });
+});
+
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentCategory = tab.dataset.category;
+    });
+});
+
+document.getElementById('budgetSlider').addEventListener('input', (e) => {
+    currentBudget = parseInt(e.target.value);
+    document.getElementById('budgetValue').textContent = budgetLabels[currentBudget - 1];
+});
+
+document.getElementById('spinBtn').addEventListener('click', spin);
+document.getElementById('findNearbyBtn').addEventListener('click', findNearbyPlaces);
+document.getElementById('openMapsBtn').addEventListener('click', openGoogleMaps);
+
+document.getElementById('soundToggle').addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    document.getElementById('soundToggle').textContent = soundEnabled ? '🔊' : '🔇';
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && !isSpinning) {
+        e.preventDefault();
+        spin();
+    }
+});
+
+// Initialize
+createFloatingFoods();
+initReels();
+updateTheme('theme-student');
+</script>
+</body>
+</html>
